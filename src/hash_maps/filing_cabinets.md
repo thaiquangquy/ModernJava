@@ -20,7 +20,7 @@ Once you have enough records you separate your folders by something like the pat
 have your `A-M` and `N-Z` cabinets.
 
 | A-M  | N-Z |
-| -------- | |
+| -------- | -------- |
 | Lightning McQueen  | Strip Weathers |
 | Tow Mater | |
 | Doc Hudson | |
