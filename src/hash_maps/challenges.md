@@ -127,7 +127,7 @@ class Person {
 
 class Main {
     void main() {
-        var person = new Person("Patrocolus");
+        var person = new Person(30);
         var map = new HashMap<Person, String>();
         map.put(person, "Achilles");
 
