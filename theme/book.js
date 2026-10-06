@@ -3,6 +3,11 @@
 // Fix back button cache problem
 window.onunload = function () { };
 
+// Java runner endpoint, the single place it is defined. Resolved from the book
+// root (path_to_root), so it is "<book root>/../_runner/execute": a sibling of
+// the book directory, valid under any URL prefix. No hostname or prefix baked in.
+const RUNNER_ENDPOINT = new URL("../_runner/execute", new URL(window.path_to_root || "./", location.href)).href;
+
 // Global variable, shared between modules
 function playground_text(playground, hidden = true) {
   let code_block = playground.querySelector("code");
@@ -124,7 +129,7 @@ function playground_text(playground, hidden = true) {
 
     result_block.innerText = "Running...";
 
-    const response = fetch_with_timeout("https://run.mccue.dev/execute", {
+    const response = fetch_with_timeout(RUNNER_ENDPOINT, {
       headers: {
         "Content-Type": "application/json",
       },
