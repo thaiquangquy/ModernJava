@@ -43,3 +43,24 @@ body.ayu .not_desired_behavior {
 .ferris-explain {
   width: 100px;
 }
+
+/* Challenge pages: always-visible actions, locked/editing states, Java release badge */
+body.challenge-page pre > .buttons {
+  visibility: visible;
+  opacity: 1;
+}
+
+.java-release-badge {
+  position: absolute;
+  right: 8px;
+  bottom: 4px;
+  z-index: 2;
+  font-size: 0.7em;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+pre.challenge-editing > .buttons .edit-button {
+  color: var(--sidebar-active);
+  border-color: var(--sidebar-active);
+}

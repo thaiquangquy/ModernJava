@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `mdbook serve` — build and serve locally with live reload (requires `mdbook` installed)
 - `mdbook build` — build to `./book` (this is what the deploy workflow runs)
+- `node dev/serve.mjs` — `mdbook serve` plus a local Java runner on the same origin (`POST /_runner/execute`, uses `java` on PATH or `$JAVA_HOME`, needs JDK 25), so Run works end to end at http://localhost:3000. Not sandboxed; dev only.
 
 CI: `.github/workflows/deploy-gh-pages.yaml` deploys on push to `master`. Note the default/working branch is `develop`. PRs run a LanguageTool typo check (`language.yaml`); the markdownlint and link-check jobs are commented out, but `.markdownlint.yaml` documents the intended rules (line length 300, 4-space list indent, only `iframe`/`sup` HTML allowed).
 
@@ -36,3 +37,10 @@ Java snippets use mdBook playground attributes, and the choice matters because t
 - Avoid the terms "object oriented"/"functional programming" as framing; explain the mechanics and motivation instead.
 - Maintainers are not accepting broad changes to main chapter content; welcome contributions are challenges, theming, and grammar/ordering fixes.
 - Contribution guidelines live in the GitHub wiki (see `CONTRIBUTING.md`).
+
+## Challenge editor (theme)
+
+On `challenges.html` pages only, `theme/book.js` (`setupChallengeBlock`) renders code blocks locked, with Run, Edit, Undo and Copy buttons. Edit unlocks the block as an Ace editor with Java completion (`theme/js/java-completions.js`, vendored Ace 1.4.4 `theme/js/ace/ext-language_tools.js` + `mode-java.js`, which must match mdBook's bundled `ace.js`). Other chapters are unchanged.
+
+- Run posts to `RUNNER_ENDPOINT` (relative `../_runner/execute`, proxied to the sandboxed runner) with `release: JAVA_RELEASE`. Keep the endpoint relative and the request/response shape unchanged.
+- The theme targets mdBook 0.4.x (`{{previous}}` helper); mdBook 0.5 fails to render `theme/index.hbs`.

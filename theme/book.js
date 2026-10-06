@@ -8,6 +8,9 @@ window.onunload = function () { };
 // the book directory, valid under any URL prefix. No hostname or prefix baked in.
 const RUNNER_ENDPOINT = new URL("../_runner/execute", new URL(window.path_to_root || "./", location.href)).href;
 
+// Java release the runner compiles and runs with. Also shown on challenge editors.
+const JAVA_RELEASE = '25';
+
 // Global variable, shared between modules
 function playground_text(playground, hidden = true) {
   let code_block = playground.querySelector("code");
@@ -120,7 +123,7 @@ function playground_text(playground, hidden = true) {
     let text = playground_text(code_block);
 
     var params = {
-      release: '25',
+      release: JAVA_RELEASE,
       runtime: 'latest',
       action: 'run',
       preview: false,
@@ -330,6 +333,163 @@ function playground_text(playground, hidden = true) {
       }
     },
   );
+
+  // Challenge pages: blocks render read-only; an Edit button unlocks them with
+  // Java completion, and Run executes whatever is in the editor.
+  function isChallengePage() {
+    return /\/challenges(\.html)?\/?$/.test(location.pathname);
+  }
+
+  function currentAceTheme() {
+    var html = document.documentElement;
+    var dark = ["coal", "navy", "ayu"].some((t) => html.classList.contains(t));
+    return dark ? "ace/theme/tomorrow_night" : "ace/theme/dawn";
+  }
+
+  function setupChallengeBlock(pre_block) {
+    var code_block = pre_block.querySelector("code");
+    // Editable blocks lose "language-java" earlier in this file, so accept both.
+    if (
+      !code_block ||
+      !(
+        code_block.classList.contains("language-java") ||
+        code_block.classList.contains("editable")
+      )
+    ) {
+      return;
+    }
+    if (code_block.classList.contains("no_run")) return;
+
+    var buttons = pre_block.querySelector(".buttons");
+    if (!buttons) return;
+
+    // Always show the Run button here (it is rendered hidden by default).
+    var play_button = buttons.querySelector(".play-button");
+    if (play_button) play_button.hidden = false;
+
+    if (
+      !window.ace ||
+      code_block.classList.contains("panics") ||
+      code_block.classList.contains("does_not_compile")
+    ) {
+      return;
+    }
+
+    var badge = document.createElement("span");
+    badge.className = "java-release-badge";
+    badge.textContent = "Java " + JAVA_RELEASE;
+    pre_block.appendChild(badge);
+
+    var editor = null;
+
+    function ensureEditor() {
+      if (editor) return editor;
+
+      if (code_block.classList.contains("editable")) {
+        editor = window.ace.edit(code_block);
+      } else {
+        // Plain block: swap the highlighted markup for an Ace editor. The
+        // text still includes hidden (~) lines so the program stays complete.
+        var text = code_block.textContent;
+        code_block.classList.remove("hide-boring");
+        pre_block
+          .querySelectorAll(".fa-eye, .fa-eye-slash")
+          .forEach((b) => b.remove());
+        code_block.textContent = text;
+        code_block.classList.add("editable");
+        editor = window.ace.edit(code_block);
+        editor.setOptions({
+          highlightActiveLine: false,
+          showPrintMargin: false,
+          showLineNumbers: false,
+          showGutter: false,
+          maxLines: Infinity,
+          fontSize: "0.875em",
+        });
+        editor.$blockScrolling = Infinity;
+        editor.originalCode = text;
+        editor.setTheme(currentAceTheme());
+        window.editors = window.editors || [];
+        window.editors.push(editor);
+      }
+
+      editor.getSession().setMode("ace/mode/java");
+      editor.commands.addCommand({
+        name: "run",
+        bindKey: { win: "Ctrl-Enter", mac: "Ctrl-Enter" },
+        exec: () => run_java_code(pre_block),
+      });
+      return editor;
+    }
+
+    function setEditing(on) {
+      var ed = ensureEditor();
+      ed.setReadOnly(!on);
+      ed.renderer.$cursorLayer.element.style.display = on ? "" : "none";
+      pre_block.classList.toggle("challenge-editing", on);
+      edit_button.title = on ? "Lock editing" : "Edit this code";
+      edit_button.setAttribute("aria-label", edit_button.title);
+      edit_button.setAttribute("aria-pressed", String(on));
+
+      var tools = window.ace.require("ace/ext/language_tools");
+      if (on && tools && window.javaCompletions) {
+        if (!window.javaCompletionsRegistered) {
+          tools.addCompleter(window.javaCompletions.completer);
+          window.ace
+            .require("ace/snippets")
+            .snippetManager.register(window.javaCompletions.snippets, "java");
+          window.javaCompletionsRegistered = true;
+        }
+        ed.setOptions({
+          enableBasicAutocompletion: true,
+          enableLiveAutocompletion: true,
+          enableSnippets: true,
+        });
+      } else if (tools) {
+        ed.setOptions({
+          enableBasicAutocompletion: false,
+          enableLiveAutocompletion: false,
+          enableSnippets: false,
+        });
+      }
+      if (on) ed.focus();
+    }
+
+    var edit_button = document.createElement("button");
+    edit_button.className = "fa fa-pencil edit-button";
+    edit_button.title = "Edit this code";
+    edit_button.setAttribute("aria-label", edit_button.title);
+    edit_button.setAttribute("aria-pressed", "false");
+    buttons.insertBefore(edit_button, buttons.firstChild);
+    edit_button.addEventListener("click", function () {
+      setEditing(!pre_block.classList.contains("challenge-editing"));
+    });
+
+    var reset_button = document.createElement("button");
+    reset_button.className = "fa fa-history reset-button";
+    reset_button.title = "Undo changes";
+    reset_button.setAttribute("aria-label", reset_button.title);
+    buttons.insertBefore(reset_button, buttons.firstChild);
+    reset_button.addEventListener("click", function () {
+      if (!editor) return;
+      editor.setValue(editor.originalCode);
+      editor.clearSelection();
+      setEditing(false);
+    });
+
+    // Editable blocks already have an editor: start them locked.
+    if (code_block.classList.contains("editable")) {
+      setEditing(false);
+    }
+  }
+
+  if (isChallengePage()) {
+    document.body.classList.add("challenge-page");
+    // Run after every additional-js script (mode-java, language_tools) loaded.
+    document.addEventListener("DOMContentLoaded", function () {
+      Array.from(document.querySelectorAll("pre")).forEach(setupChallengeBlock);
+    });
+  }
 })();
 
 (function themes() {
