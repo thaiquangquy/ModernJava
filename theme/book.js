@@ -140,7 +140,15 @@ function playground_text(playground, hidden = true) {
       mode: "cors",
       body: JSON.stringify(params),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        // The runner answers its own errors (400/413) in JSON with a stderr
+        // message; anything else not OK is a proxy/tunnel error page (HTML).
+        var is_json = (response.headers.get("Content-Type") || "").includes("application/json");
+        if (!response.ok && !is_json) {
+          throw new Error("Runner unavailable (HTTP " + response.status + "), try again later");
+        }
+        return response.json();
+      })
       .then((response) => {
         console.info(response);
 
