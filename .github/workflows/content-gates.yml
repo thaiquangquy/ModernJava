@@ -1,0 +1,57 @@
+# Blocking content gates for the Modern Java book (agent-factory portfolio: modern-java).
+# Job names match portfolio.yml `gates`; add them as required status checks on `develop`.
+# LanguageTool stays advisory in language.yaml.
+name: content-gates
+
+on:
+  pull_request:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: content-gates-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  mdbook-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: peaceiris/actions-mdbook@ee69d230fe19748b7abf22df32acaa93833fad08 # v2.0.0
+        with:
+          mdbook-version: "0.4.52" # same as deploy-gh-pages.yaml; theme/index.hbs needs 0.4.x
+      - run: mdbook build
+
+  summary-lists-new-pages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - run: node dev/check-summary.mjs "origin/${{ github.event.pull_request.base.ref }}"
+
+  markdownlint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Lint changed book pages
+        env:
+          BASE: origin/${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+          # Only changed pages: the existing book has many pre-existing lint errors.
+          mapfile -t files < <(git diff --name-only --diff-filter=ACMR "$BASE"...HEAD -- 'src/*.md' 'src/**/*.md')
+          if [ ${#files[@]} -eq 0 ]; then echo "No changed pages under src/."; exit 0; fi
+          npx markdownlint --config .markdownlint.yaml "${files[@]}"

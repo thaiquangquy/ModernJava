@@ -161,3 +161,6 @@ gradle-app.setting
 book
 .clj-kondo
 .lsp
+
+# node (OpenSpec, markdownlint)
+node_modules/

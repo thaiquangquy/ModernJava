@@ -1,1 +1,8 @@
 * @Together-Java/moderators @Together-Java/maintainers
+
+# Agent Factory guardrail: workflows, agent rules and tooling are owner-only (agents must not edit them).
+/.github/ @thaiquangquy
+/CLAUDE.md @thaiquangquy
+/package.json @thaiquangquy
+/package-lock.json @thaiquangquy
+/openspec/config.yaml @thaiquangquy
