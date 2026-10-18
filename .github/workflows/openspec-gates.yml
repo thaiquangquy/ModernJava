@@ -1,0 +1,76 @@
+# Blocking OpenSpec gates (agent-factory: agent-company/templates/workflows/openspec-gates.yml).
+# Add `validate` and `risk-high-needs-approval` as required status checks on `develop`.
+name: openspec-gates
+
+on:
+  pull_request:
+    branches: [develop]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  contents: read
+
+env:
+  OPENSPEC_TELEMETRY: "0"
+  DO_NOT_TRACK: "1"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci # OpenSpec is pinned in package.json devDependencies
+
+      - name: Validate all specs and changes
+        run: npx openspec validate --all --strict
+
+      - name: Archive check (agent PRs only)
+        if: startsWith(github.event.pull_request.head.ref, 'agent/')
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          BASE: origin/${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+          id="${HEAD_REF#agent/}"
+          # 1. The change folder must be gone from openspec/changes/
+          if [ -d "openspec/changes/$id" ]; then
+            echo "::error::Change $id is not archived. Run: openspec archive $id --yes"; exit 1
+          fi
+          # 2. An archive folder for this change must exist
+          ls -d openspec/changes/archive/*-"$id" >/dev/null 2>&1 \
+            || { echo "::error::No archive folder for $id"; exit 1; }
+          # 3. Living specs must have changed (protects against silent spec drop)
+          if git diff --quiet "$BASE"...HEAD -- openspec/specs/; then
+            echo "::error::openspec/specs/ did not change. Spec deltas were not applied."; exit 1
+          fi
+
+  risk-high-needs-approval:
+    # Fails while a risk:high PR has no approval from the owner.
+    # Owner-authored PRs pass: GitHub does not let authors approve their own PR, and at L2 the owner merges by hand.
+    # Agent PRs at L3 come from the GitHub App identity, so they still need the approval.
+    if: contains(github.event.pull_request.labels.*.name, 'risk:high')
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      pull-requests: read
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          OWNER_LOGIN: thaiquangquy
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          if [ "$AUTHOR" = "$OWNER_LOGIN" ]; then echo "Owner-authored PR."; exit 0; fi
+          approved=$(gh api "repos/${{ github.repository }}/pulls/$PR/reviews" \
+            --jq "[.[] | select(.state==\"APPROVED\" and .user.login==\"$OWNER_LOGIN\")] | length")
+          [ "$approved" -gt 0 ] || { echo "::error::risk:high needs approval from $OWNER_LOGIN"; exit 1; }
