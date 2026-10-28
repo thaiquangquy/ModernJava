@@ -90,7 +90,7 @@ class Main {
 ```
 
 If you feel like this is hard to do with just `.put` and `.get`, you can 
-check for [other methods on HashMap that can help you](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/HashMap.html).
+check for [other methods on HashMap that can help you](https://javadoc.mccue.dev/api/java.base/java/util/HashMap.html).
 
 ## Challenge 3.
 
@@ -127,7 +127,7 @@ class Person {
 
 class Main {
     void main() {
-        var person = new Person("Patrocolus");
+        var person = new Person(30);
         var map = new HashMap<Person, String>();
         map.put(person, "Achilles");
 

@@ -86,9 +86,9 @@ Fabric pretty quickly requires you to interact with a concept called a "Mixin."
 This is a mechanism the Minecraft modding world made for magically editing the code inside Minecraft
 among other things. If you go this path just be ready for that.
 
-[Fabric Getting Started here](https://docs.fabricmc.net/develop/getting-started/introduction-to-fabric-and-modding)
+[Fabric Getting Started here](https://docs.fabricmc.net/develop/)
 
-[Fabric community Discord here]([https://discord.gg/v6v4pMv](https://discord.gg/v6v4pMv))
+[Fabric community Discord here](https://discord.fabricmc.net/)
 
 For making plugins that run on a custom Minecraft server - so things that handle custom
 chat commands and things of that nature - you have to use the plugin required by whatever
@@ -117,7 +117,7 @@ to in order to render websites.
 There are a lot of tools for this in Java. A lot a lot. I would recommend
 starting with the one that comes built-in: the `jdk.httpserver` module.
 
-[Docs for `jdk.httpserver` here](https://docs.oracle.com/en/java/javase/25/docs/api/jdk.httpserver/module-summary.html)
+[Docs for `jdk.httpserver` here](https://javadoc.mccue.dev/api/jdk.httpserver/module-summary.html)
 
 Then you will need to learn about SQL databases and how to query from/insert into them from Java.
 
@@ -147,7 +147,7 @@ two paths.
 Path #1 is to learn Java Swing. This is an old crusty GUI framework that is kinda difficult to use
 but has the pro of coming with Java and being able to run on every potato in existence.
 
-[Docs for `java.desktop` (Swing) here](https://docs.oracle.com/en/java/javase/25/docs/api/java.desktop/module-summary.html)
+[Docs for `java.desktop` (Swing) here](https://javadoc.mccue.dev/api/java.desktop/module-summary.html)
 
 Path #2 is the learn JavaFX. By all accounts JavaFX is better software than Swing, but it was cursed
 by coming out at a point in history where desktop apps were no longer big business to develop. It
@@ -243,7 +243,6 @@ context for quite yet:
 <img src="/conclusion/cici_c_rat.png" height="200px"/>
 
 * C++
-* Clojure
 * Elm
 * Haskell
 * Python

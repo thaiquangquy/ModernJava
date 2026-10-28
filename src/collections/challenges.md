@@ -5,7 +5,7 @@ Remember the rules for this are
 - Try to use only the information given up to this point in this book.
 - Try not to give up until you've given it a solid attempt
 
-## Challenge 1.
+## Challenge 1
 
 Replace uses of the "concrete" collection types (`ArrayList`, `HashMap`, `HashSet`)
 in the following code with the corresponding collection interfaces.
@@ -54,11 +54,13 @@ class Main {
 }
 ```
 
-## Challenge 2.
+## Challenge 2
 
 Call `methodB` using the array returned from `methodA`.
 
-```java
+```java,editable
+import java.util.List;
+
 class Main {
     String[] methodA() {
         return new String[] {
@@ -66,13 +68,13 @@ class Main {
             "Attichitcuk",
             "Mallatobuck",
             "Lumpawaroo"
-        }
+        };
     }
 
     void methodB(List<String> character) {
         IO.println("Characters in the Star Wars Christmas Special:");
         IO.println("----------------");
-        for (item : character) {
+        for (var item : character) {
             IO.println(item);
         }
     }
