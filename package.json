@@ -1,0 +1,14 @@
+{
+  "name": "modern-java-book",
+  "private": true,
+  "description": "Dev tooling for the Modern Java book: OpenSpec and markdownlint. The book itself is built with mdBook.",
+  "scripts": {
+    "spec:validate": "openspec validate --all --strict",
+    "lint:md": "markdownlint --config .markdownlint.yaml",
+    "check:summary": "node dev/check-summary.mjs"
+  },
+  "devDependencies": {
+    "@fission-ai/openspec": "1.14.0",
+    "markdownlint-cli": "0.49.1"
+  }
+}

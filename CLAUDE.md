@@ -12,7 +12,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `mdbook build` — build to `./book` (this is what the deploy workflow runs)
 - `node dev/serve.mjs` — `mdbook serve` plus a local Java runner on the same origin (`POST /_runner/execute`, uses `java` on PATH or `$JAVA_HOME`, needs JDK 25), so Run works end to end at http://localhost:3000. Not sandboxed; dev only.
 
-CI: `.github/workflows/deploy-gh-pages.yaml` deploys on push to `master`. Note the default/working branch is `develop`. PRs run a LanguageTool typo check (`language.yaml`); the markdownlint and link-check jobs are commented out, but `.markdownlint.yaml` documents the intended rules (line length 300, 4-space list indent, only `iframe`/`sup` HTML allowed).
+CI: `.github/workflows/deploy-gh-pages.yaml` deploys on push to `master`. Note the default/working branch is `develop`. PRs into `develop` run blocking gates: `content-gates.yml` (`mdbook-build`, `summary-lists-new-pages`, `markdownlint` on changed `src/` pages only, since older pages have pre-existing lint errors) and `openspec-gates.yml` (`openspec validate --all --strict`, archive check on `agent/*` branches, approval check for `risk:high`). LanguageTool (`language.yaml`) is advisory. `.markdownlint.yaml` holds the rules (line length 300, 4-space list indent, only `iframe`/`sup` HTML allowed).
+
+- `npm ci` — installs pinned OpenSpec and markdownlint-cli
+- `npm run spec:validate` — `openspec validate --all --strict`
+- `npm run check:summary` — new `src/` pages are listed in `src/SUMMARY.md` (vs `origin/develop`)
+- `npm run lint:md -- <files>` — markdownlint the pages you changed
 
 ## Structure
 
@@ -44,3 +49,14 @@ On `challenges.html` pages only, `theme/book.js` (`setupChallengeBlock`) renders
 
 - Run posts to `RUNNER_ENDPOINT` (relative `../_runner/execute`, proxied to the sandboxed runner) with `release: JAVA_RELEASE`. Keep the endpoint relative and the request/response shape unchanged.
 - The theme targets mdBook 0.4.x (`{{previous}}` helper); mdBook 0.5 fails to render `theme/index.hbs`.
+
+## Agent workflow (Agent Factory pilot)
+
+This repo is the `modern-java` pilot of Agent Factory (github.com/thaiquangquy/agent-factory, `portfolio.yml`), at autonomy L2.
+
+- **Fork only.** Target `thaiquangquy/ModernJava`, never upstream `bowbahdoe/ModernJava`. Branch from and PR into `develop`. Never push to `master` and never edit `deploy-gh-pages.yaml`: a push to `master` publishes the book.
+- **Spec-driven.** Changes go through OpenSpec (`openspec/`, pinned in `package.json`): `/opsx:propose` → `/opsx:apply` → archive with the CLI, `npx openspec archive <change-id> --yes` (not the archive skill). Living specs are in `openspec/specs/`.
+- **Every scenario has a check.** Each `#### Scenario:` in a change's spec delta must name the check that proves it (a gate above, `mdbook build`, or a script under `dev/`), and that check must pass before the PR. This book has no unit tests, so a check is a build or structure check. A scenario without a check is not done.
+- **Branches and labels** follow agent-factory `kb/KB-workflow-conventions.md`: `spec/<change-id>`, `agent/<change-id>`; labels `agent-ready`, `agent-running`, `needs-human`, `risk:low|high`, `priority:p0..p3`, `change:<id>`, `type:content`.
+- **Do not edit** `.github/`, `CLAUDE.md` or `package.json` from an agent run. If a change needs it: stop, label `risk:high` + `needs-human`.
+- **Kill switch.** Repo variable `AGENTS_ENABLED`; any agent workflow exits when it is not `true`. Runs are capped at 15 turns (`portfolio.yml` `max_turns`).
