@@ -58,7 +58,9 @@ class Main {
 
 Call `methodB` using the array returned from `methodA`.
 
-```java
+```java,editable
+import java.util.List;
+
 class Main {
     String[] methodA() {
         return new String[] {
@@ -66,13 +68,13 @@ class Main {
             "Attichitcuk",
             "Mallatobuck",
             "Lumpawaroo"
-        }
+        };
     }
 
     void methodB(List<String> character) {
         IO.println("Characters in the Star Wars Christmas Special:");
         IO.println("----------------");
-        for (item : character) {
+        for (var item : character) {
             IO.println(item);
         }
     }
